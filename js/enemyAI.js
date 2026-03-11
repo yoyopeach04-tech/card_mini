@@ -14,26 +14,26 @@ async function startOfBattlePhase() {
       const cy = slotRect.top  + slotRect.height / 2;
 
       // Overlay dim
-      const ov = document.createElement('div'); ov.className = 'rift-overlay'; document.body.appendChild(ov);
+      const ov = document.createElement('div'); ov.className = 'battle-vfx rift-overlay'; document.body.appendChild(ov);
       sd(() => ov.remove(), 2000);
 
       // Portal circle
       const sz = 140;
-      const portal = document.createElement('div'); portal.className = 'rift-portal';
+      const portal = document.createElement('div'); portal.className = 'battle-vfx rift-portal';
       portal.style.cssText = `width:${sz}px;height:${sz}px;left:${cx - sz/2}px;top:${cy - sz/2}px;`;
       document.body.appendChild(portal);
       sd(() => portal.remove(), 1900);
 
       // Expanding rings
       [0, 0.18, 0.36].forEach((delay, idx) => {
-        const ring = document.createElement('div'); ring.className = 'rift-ring';
+        const ring = document.createElement('div'); ring.className = 'battle-vfx rift-ring';
         ring.style.cssText = `left:${cx}px;top:${cy}px;--ring-delay:${delay}s;--ring-dur:${1.1 + idx * 0.1}s;`;
         document.body.appendChild(ring);
         setTimeout(() => ring.remove(), (1.5 + delay) * 1000);
       });
 
       // Title
-      const ttl = document.createElement('div'); ttl.className = 'rift-title';
+      const ttl = document.createElement('div'); ttl.className = 'battle-vfx rift-title';
       ttl.innerHTML = `<span class="rt-main">🌀 RIFT WARP</span><span class="rt-sub">Chronovex · Deployed</span>`;
       document.body.appendChild(ttl);
       sd(() => ttl.remove(), 2200);
@@ -62,14 +62,14 @@ async function endTurn() {
 
   addLog("--- เทิร์น <span class='log-enemy'>บอส</span> ---");
   enemyHand.forEach(c => { if (c.waitTime > 0) c.waitTime--; });
-  if (enemyDeck.length && enemyHand.length < 7) enemyHand.push(cloneCard(enemyDeck.splice(0, 1)[0]));
+  if (enemyDeck.length && enemyHand.length < HAND_LIMIT) enemyHand.push(cloneCard(enemyDeck.splice(0, 1)[0]));
   renderEnemyHand(); updateDeckCount();
   enemyHand.filter(c => c.waitTime <= 0).forEach(c => { let e = enemyBoard.indexOf(null); if (e !== -1) { enemyBoard[e] = c; initCard(enemyBoard[e]); enemyHand.splice(enemyHand.indexOf(c), 1); addLog(`👉 <span class="log-enemy">บอส</span> ลงการ์ด ${c.name}`); } });
   markDirty(); flushBoard(); renderEnemyHand(); await sleep(600);
 
   await processTurnPhase(false); if (isGameOver) return;
   hand.forEach(c => { if (c.waitTime > 0) c.waitTime--; });
-  if (playerDeck.length && hand.length < 7) hand.push(cloneCard(playerDeck.splice(0, 1)[0]));
+  if (playerDeck.length && hand.length < HAND_LIMIT) hand.push(cloneCard(playerDeck.splice(0, 1)[0]));
   renderHand(); updateDeckCount();
   if (endTurnBtn) endTurnBtn.disabled = false;
 }

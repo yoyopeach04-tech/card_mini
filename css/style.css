@@ -1450,3 +1450,34 @@ body { margin: 0; background-color: #111; color: #eee; font-family: 'Segoe UI', 
   max-width: 60px; /* จำกัดพื้นที่ (การ์ดเรากว้าง 100px เผื่อที่ให้ป้าย CD ซ้ายมือ) */
   overflow: hidden; /* ถ้าดาวทะลัก 60px ก็ตัดทิ้งเนียนๆ ไปเลย */
 }
+/* ── ✨ SHATTER EFFECT ─────────────────────────────────────── */
+.card-shard {
+  position: fixed;
+  background-size: cover;
+  background-position: center;
+  background-color: #1a1a2e;
+  pointer-events: none;
+  z-index: 9999;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  will-change: transform, opacity;
+  animation: shardFly 0.72s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+@keyframes shardFly {
+  0%   { transform: translate(0, 0) rotate(0deg) scale(1);                              opacity: 1; }
+  35%  { opacity: 1; }
+  100% { transform: translate(var(--ex), var(--ey)) rotate(var(--er)) scale(0.28);     opacity: 0; }
+}
+
+.card-shatter-flash {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9998;
+  background: white;
+  border-radius: 8px;
+  animation: shatterFlash 0.25s ease-out forwards;
+}
+@keyframes shatterFlash {
+  0%   { opacity: 0.85; transform: scale(1.06); }
+  100% { opacity: 0;    transform: scale(1.22); }
+}
+/* ─────────────────────────────────────────────────────────── */

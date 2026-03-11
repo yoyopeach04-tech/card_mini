@@ -9,17 +9,22 @@ function cloneCard(c) {
   try {
     return structuredClone(c);
   } catch {
-    // fallback สำหรับ browser เก่าที่ไม่รองรับ structuredClone
     return { ...c, skills: c.skills ? c.skills.map(s => ({ ...s })) : [] };
   }
 }
+// ── Board / Hand limits ─────────────────────────────────────
+// FIX: แทน magic number 7 ที่กระจาย 8 จุด — แก่ที่เดียวเพื่อเปลี่ยน board size
+const BOARD_SIZE = 7;
+const HAND_LIMIT  = 7;
 let gameSpeed = 1;
 // Fix Bug #5: ทั้ง sleep และ sd หาร gameSpeed เองอิสระ — ใช้อันเดียวกันต่อ flow
 // sleep = await-able pause / sd = fire-and-forget cleanup (อย่าผสมใน timing เดียวกัน)
 const sleep = ms => new Promise(r => setTimeout(r, ms / gameSpeed));
 const sd    = (fn, ms) => setTimeout(fn, ms / gameSpeed);
 const $      = id => document.getElementById(id);
-const hasSkill  = (c, k) => c?.skills?.some(s => s.name.includes(k));
+// FIX: ใช้ skill.id (exact match) แทน s.name.includes(k) ป้องกัน false-positive
+// ถ้าสกิลมี id → เปรียบเทียบ id ตรงๆ / ถ้าไม่มี → fallback เป็น name.includes (backward compat)
+const hasSkill  = (c, k) => c?.skills?.some(s => s.id ? s.id === k : s.name.includes(k));
 const getMyBoard = p => p ? playerBoard : enemyBoard;
 const markDirty  = () => { boardDirty = true; };
 const flushBoard = () => { if (boardDirty) { realRenderBoard(); boardDirty = false; } };
@@ -28,7 +33,7 @@ const flushBoard = () => { if (boardDirty) { realRenderBoard(); boardDirty = fal
 // ── 4. STATE ───────────────────────────────────────────────
 let playerHP = 25000, enemyHP = 25000, isGameOver = false, cardUidCounter = 0, combatStats = {};
 let playerDeck = [], enemyDeck = [], hand = [], enemyHand = [];
-let playerBoard = Array(7).fill(null), enemyBoard = Array(7).fill(null);
+let playerBoard = Array(BOARD_SIZE).fill(null), enemyBoard = Array(BOARD_SIZE).fill(null);
 let playerGraveyard = [], enemyGraveyard = [], boardDirty = false;
 
 // ── 5. DOM REFS (กำหนดตรงนี้ก่อน, assign ใน DOMContentLoaded ด้านล่าง) ──────
@@ -201,24 +206,10 @@ function updateFloats(now) {
 // RAF loop จะถูก start ใน DOMContentLoaded ด้านล่าง
 
 function cleanupAllEffects() {
-  const EFFECT_SELECTORS = [
-    // Legacy
-    '.blood-nova-overlay','.tyrant-overlay','.blood-drop','.soul-orb',
-    '.devour-title',
-    '.blood-shockwave','.golden-crack','.judgment-beam','.halo-pulse','.airstrike-flash',
-    // Chrono Arbiter
-    '.temporal-beam','.temporal-gear','.shield-burst','.restore-ring','.restore-beam','.heart-particle',
-    // Chronovex Rift
-    '.rift-overlay','.rift-portal','.rift-ring','.rift-title',
-    '.time-accel-sweep','.time-clock-particle',
-    '.grave-contract-pillar','.grave-soul-orb',
-    // Final Judgement
-    '.fj-overlay','.fj-title',
-    // Void Dragon
-    '.void-overlay','.void-shockwave','.void-breath-title','.devour-orb',
-    '.singularity-overlay','.singularity-core','.singularity-ring','.singularity-title',
-  ];
-  document.querySelectorAll(EFFECT_SELECTORS.join(',')).forEach(el => el.remove());
+  // FIX: แทน hardcode selector list ที่ต้องแก้ทุกครั้งเพิ่ม effect ใหม่
+  // ทุก visual effect element ควรเพิ่ม class 'battle-vfx' ตอนสร้าง
+  // → querySelectorAll('.battle-vfx') เพียงพอ ไม่มี selector หลุด
+  document.querySelectorAll('.battle-vfx').forEach(el => el.remove());
 }
 
 function renderStatsUI() {
@@ -240,7 +231,7 @@ async function processTurnPhase(isPlayer) {
   const slots  = isPlayer ? playerBoardSlots : enemyBoardSlots;
   const heroEl = isPlayer ? playerHeroEl : enemyHeroEl;
   
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < BOARD_SIZE; i++) {
     if (isGameOver) return;
     let myBoard = getMyBoard(isPlayer), pCard = myBoard[i];
     if (!pCard || pCard.hp <= 0) continue;
@@ -257,7 +248,7 @@ async function processTurnPhase(isPlayer) {
       pCard.hp -= bd; pCard.burnTurns--;
       if (combatStats[pCard?.uid]) combatStats[pCard?.uid].taken += bd;
       showFloat(`🔥 -${bd}`, slots[i], "dmg"); addLog(`🔥 ${pN} ไฟไหม้! -${bd} (${pCard.burnTurns} เทิร์นที่เหลือ)`);
-      if (pCard.hp <= 0) { checkDeaths(); myBoard = getMyBoard(isPlayer); pCard = myBoard[i]; if (!pCard) continue; }
+      if (pCard.hp <= 0) { await checkDeaths(); myBoard = getMyBoard(isPlayer); pCard = myBoard[i]; if (!pCard) continue; }
     }
 
     let isInStealth = false;
@@ -308,7 +299,7 @@ async function processTurnPhase(isPlayer) {
         await sleep(500);
         // kill victim
         victim.hp = 0;
-        checkDeaths(); markDirty(); flushBoard(); await sleep(300);
+        await checkDeaths(); markDirty(); flushBoard(); await sleep(300);
         // buff Tyrant
         pCard._displayATK = pCard.atk; pCard._displayHP = pCard.hp;
         pCard.atk = Number(pCard.atk) + atkGain;
@@ -324,7 +315,7 @@ async function processTurnPhase(isPlayer) {
         if (pCard && pCard.hp > 0) {
           showFloat("⚡ INSTANT ATTACK!", slots[i], "skill");
           await executeAttack(pCard, getMyBoard(!isPlayer)[i], i, isPlayer);
-          checkDeaths(); markDirty(); flushBoard(); await sleep(300);
+          await checkDeaths(); markDirty(); flushBoard(); await sleep(300);
         }
         myBoard = getMyBoard(isPlayer); pCard = myBoard[i];
         if (!pCard || pCard.hp <= 0) continue;
@@ -396,7 +387,11 @@ async function processTurnPhase(isPlayer) {
           hp: Math.floor((tgt.maxHP || tgt.hp) * 0.5), maxHP: Math.floor((tgt.maxHP || tgt.hp) * 0.5), baseHP: Math.floor((tgt.maxHP || tgt.hp) * 0.5),
           atk: Math.floor((tgt.baseATK || tgt.atk) * 1.5), baseATK: Math.floor((tgt.baseATK || tgt.atk) * 1.5),
           stars: 0, image: tgt.image, skills: [{ name: "💥 Soul Nova", desc: "โคลนระเบิดเป้าเดี่ยว" }],
-          parentATK: pCard.atk, isClone: true, waitTime: 0, isSummoned: true, bloodStacks: 0, hasRevived: false, reviveBuffTurns: 0, domainTurns: 0, fragments: 0, hpLostAccum: 0, immortalTurns: 0, baseWait: 0, critChance: 0, echoesUsed: false, shadowTurns: 0, shadowReady: false, airstrikeCharge: 0, sentinelStacks: 0, burnTurns: 0 };
+          parentATK: pCard.atk, isClone: true, waitTime: 0, baseWait: 0, isSummoned: true,
+          _initialized: true, // set ก่อน getCombatStateDefaults ป้องกัน double-init
+        };
+        // FIX: ใช้ getCombatStateDefaults แทน hardcode — single source of truth
+        Object.assign(cln, getCombatStateDefaults(cln), { burnTurns: 0, corruptTurns: 0 });
         myBoard[es[0]] = cln; initCard(cln); showFloat("Summon!", slots[es[0]], "skill"); addLog(`💀 ${pN} Soul Rip → ${cln.name}`); usedSkill = true;
       }
     }
@@ -441,7 +436,7 @@ async function processTurnPhase(isPlayer) {
           await sleep(80);
         }
         markDirty(); flushBoard(); updateHeroHP(); await sleep(500);
-        checkDeaths(); myBoard = getMyBoard(isPlayer); pCard = myBoard[i];
+        await checkDeaths(); myBoard = getMyBoard(isPlayer); pCard = myBoard[i];
         if (!pCard || pCard.hp <= 0) continue;
         usedSkill = true;
       }
@@ -465,14 +460,14 @@ async function processTurnPhase(isPlayer) {
         for (let ai = 0; ai < tb.length; ai++) { if (!tb[ai]) continue; applyDamage(tb[ai], aoeDmg, ts2[ai], !isPlayer, "airstrike", pCard);
           tb[ai].burnTurns = (tb[ai].burnTurns || 0) + 2; showFloat("🔥 BURN", ts2[ai], "skill", ai * 80); await sleep(100); }
         markDirty(); flushBoard(); updateHeroHP(); await sleep(500);
-        checkDeaths(); myBoard = getMyBoard(isPlayer); pCard = myBoard[i];
+        await checkDeaths(); myBoard = getMyBoard(isPlayer); pCard = myBoard[i];
         if (!pCard || pCard.hp <= 0) continue;
         usedSkill = true;
       }
     }
 
-    if (usedSkill) { markDirty(); flushBoard(); updateHeroHP(); await sleep(500); checkDeaths(); myBoard = getMyBoard(isPlayer); pCard = myBoard[i]; }
-    if (!isInStealth && pCard && pCard.hp > 0) { await executeAttack(pCard, getMyBoard(!isPlayer)[i], i, isPlayer); checkDeaths(); markDirty(); flushBoard(); await sleep(300); }
+    if (usedSkill) { markDirty(); flushBoard(); updateHeroHP(); await sleep(500); await checkDeaths(); myBoard = getMyBoard(isPlayer); pCard = myBoard[i]; }
+    if (!isInStealth && pCard && pCard.hp > 0) { await executeAttack(pCard, getMyBoard(!isPlayer)[i], i, isPlayer); await checkDeaths(); markDirty(); flushBoard(); await sleep(300); }
   }
   if (!isGameOver) await shiftBoards();
 }

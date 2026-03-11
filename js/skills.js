@@ -29,14 +29,14 @@ const DEATH_TABLE = {
 
         // Pillar of spectral light on each healed ally
         const sr = getEffectRect(slots[ai]);
-        const pillar = document.createElement('div'); pillar.className = 'grave-contract-pillar';
+        const pillar = document.createElement('div'); pillar.className = 'battle-vfx grave-contract-pillar';
         pillar.style.cssText = `left:${sr.left + sr.width/2 - 35}px;bottom:${window.innerHeight - sr.bottom}px;height:${180 + Math.random()*60}px;--pillar-delay:${ai * 0.1}s;`;
         document.body.appendChild(pillar);
         setTimeout(() => pillar.remove(), 1700);
 
         // Floating soul orbs
         for (let so = 0; so < 3; so++) {
-          const orb = document.createElement('div'); orb.className = 'grave-soul-orb';
+          const orb = document.createElement('div'); orb.className = 'battle-vfx grave-soul-orb';
           const sz = 10 + Math.random() * 8;
           const ox = (Math.random() - 0.5) * 80;
           const oy = -(100 + Math.random() * 80);
@@ -55,7 +55,10 @@ const DEATH_TABLE = {
       let rv = grave.splice(bi, 1)[0];
       rv.hp = rv.maxHP;
       rv.atk = Math.floor(rv.baseATK * 1.2); rv.isSummoned = true;
-      ['isDying','echoesUsed','graveContractUsed','hasRevived','bloodStacks','fragments','immortalTurns','shadowTurns','airstrikeCharge','sentinelStacks','burnTurns'].forEach(k => rv[k] = typeof rv[k] === 'boolean' ? false : 0);
+      // FIX: ใช้ getCombatStateDefaults แทน hardcode list — เพิ่มสกิลใหม่แก่ที่เดียว
+      // force burnTurns/corruptTurns = 0 เพราะการ์ด revive ไม่ควรพกสถานะลบจากชาติก่อน
+      Object.assign(rv, getCombatStateDefaults(rv), { burnTurns: 0, corruptTurns: 0 });
+      rv._initialized = true; // baseHP/maxHP/baseATK ยังคงเดิม — ไม่ re-init
       let em = board.indexOf(null);
       if (em !== -1) { board[em] = rv; if (combatStats[c.uid]) combatStats[c.uid].heal += rv.maxHP; showFloat("REVIVED!", slots[em], "skill");
       addLog(`✨ ชุบชีวิต ${rv.name}`); }
@@ -85,20 +88,20 @@ const DEATH_TABLE = {
     (() => {
       battlefieldEl?.classList.add('anim-screen-shake');
       sd(() => battlefieldEl?.classList.remove('anim-screen-shake'), 900);
-      const ov = document.createElement('div'); ov.className = 'singularity-overlay'; document.body.appendChild(ov);
+      const ov = document.createElement('div'); ov.className = 'battle-vfx singularity-overlay'; document.body.appendChild(ov);
       setTimeout(() => ov.remove(), 3100);
-      const ttl = document.createElement('div'); ttl.className = 'singularity-title';
+      const ttl = document.createElement('div'); ttl.className = 'battle-vfx singularity-title';
       ttl.innerHTML = `<span class="st-main">☄️ CATACLYSM SINGULARITY</span><span class="st-sub">— Void Gate Opened —</span>`;
       document.body.appendChild(ttl); sd(() => ttl.remove(), 3200);
       const sRect = getEffectRect(slots?.[i]);
       if (sRect) {
         const cx = sRect.left + sRect.width / 2, cy = sRect.top + sRect.height / 2;
         const sz = 120;
-        const core = document.createElement('div'); core.className = 'singularity-core';
+        const core = document.createElement('div'); core.className = 'battle-vfx singularity-core';
         core.style.cssText = `width:${sz}px;height:${sz}px;left:${cx - sz/2}px;top:${cy - sz/2}px;`;
         document.body.appendChild(core); setTimeout(() => core.remove(), 2900);
         [0, 0.2, 0.4].forEach((d, idx) => {
-          const ring = document.createElement('div'); ring.className = 'singularity-ring';
+          const ring = document.createElement('div'); ring.className = 'battle-vfx singularity-ring';
           ring.style.cssText = `left:${cx}px;top:${cy}px;--sr-delay:${d}s;--sr-dur:${1.4 + idx*0.15}s;`;
           document.body.appendChild(ring); setTimeout(() => ring.remove(), (2.0 + d) * 1000);
         });
@@ -109,7 +112,7 @@ const DEATH_TABLE = {
     // FIX: ทำ AOE ตรงนี้เลย (sync กับ checkDeaths loop) แทน setTimeout
     oBoard.forEach((e, idx) => {
       if (!e || e.hp <= 0) return;
-      const fl = document.createElement('div'); fl.className = 'singularity-decay-flash';
+      const fl = document.createElement('div'); fl.className = 'battle-vfx singularity-decay-flash';
       oSlots[idx].style.position = 'relative'; oSlots[idx].appendChild(fl);
       applyDamage(e, cataDmg, oSlots[idx], bIdx === 0, "singularity", c);
       const decay = Math.floor(e.maxHP * 0.2);
@@ -143,11 +146,11 @@ const DEATH_TABLE = {
       battlefieldEl?.classList.add('anim-screen-shake');
       sd(() => battlefieldEl?.classList.remove('anim-screen-shake'), 600);
 
-      const fjOverlay = document.createElement('div'); fjOverlay.className = 'fj-overlay';
+      const fjOverlay = document.createElement('div'); fjOverlay.className = 'battle-vfx fj-overlay';
       document.body.appendChild(fjOverlay);
       setTimeout(() => fjOverlay.remove(), 1900);
 
-      const fjTitle = document.createElement('div'); fjTitle.className = 'fj-title';
+      const fjTitle = document.createElement('div'); fjTitle.className = 'battle-vfx fj-title';
       fjTitle.innerHTML = `<span class="fjt-main">⚰️ FINAL JUDGEMENT</span><span class="fjt-sub">— Void Sentence —</span>`;
       document.body.appendChild(fjTitle);
       setTimeout(() => fjTitle.remove(), 2300);

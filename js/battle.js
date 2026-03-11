@@ -1,11 +1,11 @@
 // ── 10. VISUAL EFFECTS (Optimized) ────────────────────────
 async function triggerBloodNovaEffect(cSlot, tSlots, tBoard, dmg, isPlayer, cCard) {
   battlefieldEl?.classList.add('anim-screen-shake'); sd(() => battlefieldEl?.classList.remove('anim-screen-shake'), 700);
-  const ov = document.createElement('div'); ov.className = 'blood-nova-overlay'; document.body.appendChild(ov);
-  const tt = document.createElement('div'); tt.className = 'blood-nova-title';
+  const ov = document.createElement('div'); ov.className = 'battle-vfx blood-nova-overlay'; document.body.appendChild(ov);
+  const tt = document.createElement('div'); tt.className = 'battle-vfx blood-nova-title';
   tt.innerHTML = `<span class="title-main">💀 BLOOD NOVA</span><span class="title-sub">— CRIMSON FRENZY —</span>`; document.body.appendChild(tt);
   const cr = getEffectRect(cSlot), cx = cr.left + cr.width / 2, cy = cr.top + cr.height / 2;
-  for (let w = 0; w < 3; w++) { let wv = document.createElement('div'); wv.className = 'blood-shockwave'; wv.style.cssText = `left:${cx}px;top:${cy}px;animation-delay:${w * 0.15}s`; document.body.appendChild(wv); setTimeout(() => wv.remove(), 1400); }
+  for (let w = 0; w < 3; w++) { let wv = document.createElement('div'); wv.className = 'battle-vfx blood-shockwave'; wv.style.cssText = `left:${cx}px;top:${cy}px;animation-delay:${w * 0.15}s`; document.body.appendChild(wv); setTimeout(() => wv.remove(), 1400); }
   
   await sleep(500);
   
@@ -13,8 +13,8 @@ async function triggerBloodNovaEffect(cSlot, tSlots, tBoard, dmg, isPlayer, cCar
   for (let i = 0; i < tBoard.length; i++) {
     if (!tBoard[i]) continue; 
     let s = tSlots[i];
-    let fl = document.createElement('div'); fl.className = 'blood-hit-flash'; s.style.position = 'relative'; s.appendChild(fl);
-    let st = document.createElement('div'); st.className = 'blood-stain'; s.appendChild(st);
+    let fl = document.createElement('div'); fl.className = 'battle-vfx blood-hit-flash'; s.style.position = 'relative'; s.appendChild(fl);
+    let st = document.createElement('div'); st.className = 'battle-vfx blood-stain'; s.appendChild(st);
     applyDamage(tBoard[i], dmg, s, !isPlayer, "blood_nova", cCard); 
     showFloat(`💀 ${dmg}`, s, "dmg", i * 80); // <--- หน่วงเวลา 80ms ต่อใบ
     sd(() => fl?.remove(), 800); setTimeout(() => st?.remove(), 3000);
@@ -26,8 +26,8 @@ async function triggerBloodNovaEffect(cSlot, tSlots, tBoard, dmg, isPlayer, cCar
 
 async function triggerTyrantEffect(cSlot, tSlots, tBoard, dmg, isPlayer, cCard) {
   battlefieldEl?.classList.add('anim-tyrant-shake'); sd(() => battlefieldEl?.classList.remove('anim-tyrant-shake'), 900);
-  const ov = document.createElement('div'); ov.className = 'tyrant-overlay'; document.body.appendChild(ov);
-  const tt = document.createElement('div'); tt.className = 'tyrant-title';
+  const ov = document.createElement('div'); ov.className = 'battle-vfx tyrant-overlay'; document.body.appendChild(ov);
+  const tt = document.createElement('div'); tt.className = 'battle-vfx tyrant-title';
   tt.innerHTML = `<span class="title-main">IMMORTAL TYRANT</span><span class="title-sub">— Soul Dominion —</span><div class="title-souls">💀💀💀💀</div>`; document.body.appendChild(tt);
   
   await sleep(500);
@@ -36,7 +36,7 @@ async function triggerTyrantEffect(cSlot, tSlots, tBoard, dmg, isPlayer, cCard) 
   for (let i = 0; i < tBoard.length; i++) {
     if (!tBoard[i]) continue; 
     let s = tSlots[i];
-    let fl = document.createElement('div'); fl.className = 'tyrant-hit-flash'; s.style.position = 'relative'; s.appendChild(fl);
+    let fl = document.createElement('div'); fl.className = 'battle-vfx tyrant-hit-flash'; s.style.position = 'relative'; s.appendChild(fl);
     applyDamage(tBoard[i], dmg, s, !isPlayer, "tyrant", cCard);
     showFloat(`👑 ${dmg}`, s, "skill", i * 80); // <--- หน่วงเวลา 80ms ต่อใบ
     sd(() => fl?.remove(), 1000);
@@ -113,14 +113,58 @@ function applyDamage(target, dmg, targetEl, isTargetPlayer, sourceType = "normal
   return dmg;
 }
 
-function checkDeaths() {
+// ── ✨ SHATTER EFFECT ──────────────────────────────────────
+function shatterCard(slotEl) {
+  if (!slotEl) return;
+  const rect = slotEl.getBoundingClientRect();
+  const cardEl = slotEl.querySelector('.card');
+  const imgUrl = cardEl
+    ? (cardEl.querySelector('.card-image-bg')?.style.backgroundImage || 'none')
+    : 'none';
+
+  // 7 เศษแตกกระเด็นคนละทิศ
+  const shards = [
+    { clip: "polygon(0% 0%, 48% 0%, 32% 42%, 0% 28%)",       ox: -65, oy: -85, rot: -38 },
+    { clip: "polygon(48% 0%, 100% 0%, 100% 22%, 62% 36%)",    ox:  75, oy: -72, rot:  30 },
+    { clip: "polygon(0% 28%, 32% 42%, 18% 68%, 0% 58%)",      ox: -82, oy:  18, rot: -52 },
+    { clip: "polygon(32% 42%, 62% 36%, 58% 74%, 18% 68%)",    ox: -18, oy:  95, rot:  14 },
+    { clip: "polygon(62% 36%, 100% 22%, 100% 68%, 58% 74%)",  ox:  78, oy:  52, rot:  42 },
+    { clip: "polygon(18% 68%, 58% 74%, 46% 100%, 0% 100%)",   ox: -58, oy: 112, rot: -26 },
+    { clip: "polygon(58% 74%, 100% 68%, 100% 100%, 46% 100%)",ox:  62, oy: 105, rot:  32 },
+  ];
+
+  shards.forEach((s, idx) => {
+    const shard = document.createElement('div');
+    shard.className = 'battle-vfx card-shard';
+    shard.style.cssText = `
+      width:${rect.width}px; height:${rect.height}px;
+      left:${rect.left}px; top:${rect.top}px;
+      background-image:${imgUrl};
+      clip-path:${s.clip};
+      --ex:${s.ox}px; --ey:${s.oy + 55}px; --er:${s.rot}deg;
+      animation-delay:${idx * 0.028}s;
+    `;
+    document.body.appendChild(shard);
+    setTimeout(() => shard.remove(), 900 + idx * 30);
+  });
+
+  // Flash ขาวตอนแตก
+  const flash = document.createElement('div');
+  flash.className = 'battle-vfx card-shatter-flash';
+  flash.style.cssText = `left:${rect.left}px; top:${rect.top}px; width:${rect.width}px; height:${rect.height}px;`;
+  document.body.appendChild(flash);
+  setTimeout(() => flash.remove(), 280);
+}
+// ──────────────────────────────────────────────────────────
+
+async function checkDeaths() {
   let changed = false, loop = true;
   while (loop) {
     loop = false;
     [playerBoard, enemyBoard].forEach((board, bIdx) => {
       let slots = bIdx === 0 ? playerBoardSlots : enemyBoardSlots;
       let grave  = bIdx === 0 ? playerGraveyard  : enemyGraveyard;
-      for (let i = 0; i < 7; i++) {
+      for (let i = 0; i < BOARD_SIZE; i++) {
         let c = board[i]; if (!c || c.hp > 0 || c.isDying) continue;
         c.isDying = true;
         for (let [key, fn] of Object.entries(DEATH_TABLE)) {
@@ -131,8 +175,8 @@ function checkDeaths() {
         }
       }
     });
-    for (let i = 0; i < 7; i++) {
-      [[enemyBoard, enemyGraveyard, playerBoard, playerBoardSlots, false], [playerBoard, playerGraveyard, enemyBoard, enemyBoardSlots, true]].forEach(([board, grave, oBoard, oSlots, isP]) => {
+    for (let i = 0; i < BOARD_SIZE; i++) {
+      for (const [board, grave, oBoard, oSlots, isP] of [[enemyBoard, enemyGraveyard, playerBoard, playerBoardSlots, false], [playerBoard, playerGraveyard, enemyBoard, enemyBoardSlots, true]]) {
         if (board[i] && board[i].hp <= 0) {
           if (board[i].isClone) {
             let xd = Math.floor(board[i].parentATK * 0.5), ti = -1, mh = -1;
@@ -144,8 +188,8 @@ function checkDeaths() {
           // 🕳 Abyss Devour: ทุก Void Dragon ฝ่ายเดียวกันดูดวิญญาณ
           const devourBoard = isP ? enemyBoard : playerBoard;
           const devourSlots = isP ? enemyBoardSlots : playerBoardSlots;
-          // FIX: หา slot ของการ์ดที่ตายก่อน remove (ฝั่งตรงข้าม)
-          const deadSlots  = isP ? playerBoardSlots : enemyBoardSlots;
+          // FIX: ผูก deadSlots กับ board โดยตรง ไม่ใช้ isP (ชัดกว่า ไม่พลาดเวลาสองฝั่งตายพร้อมกัน)
+          const deadSlots  = board === playerBoard ? playerBoardSlots : enemyBoardSlots;
           const deadSRect  = getEffectRect(deadSlots?.[i]);
           devourBoard.forEach((ally, ai) => {
             if (!ally || ally === board[i] || ally.hp <= 0) return;
@@ -162,7 +206,7 @@ function checkDeaths() {
             // visual: soul orb เคลื่อนจาก slot ที่ตาย → Void Dragon
             const dRect = getEffectRect(devourSlots[ai]);
             if (deadSRect) {
-              const orb = document.createElement('div'); orb.className = 'devour-orb';
+              const orb = document.createElement('div'); orb.className = 'battle-vfx devour-orb';
               const sz = 14;
               const tx = dRect.left + dRect.width/2 - (deadSRect.left + deadSRect.width/2);
               const ty = dRect.top  + dRect.height/2 - (deadSRect.top  + deadSRect.height/2);
@@ -187,17 +231,19 @@ function checkDeaths() {
             addLog(`⚡ ${killer.name} <span class="log-skill">Power from the Fallen</span>: ATK→${killer.atk}`);
           });
 
+          shatterCard(deadSlots[i]); // 💥 เศษแตกกระเด็น
+          await sleep(200);          // รอ shatter animation ก่อน remove การ์ด
           grave.push(board[i]); board[i] = null; changed = true; loop = true;
         }
-      });
+      } // end for...of
     }
   }
   if (changed) { updateHeroHP(); updateGrave(); markDirty(); flushBoard(); }
 }
 
 async function shiftBoards() {
-  let np = [...playerBoard.filter(Boolean), ...Array(7).fill(null)].slice(0, 7);
-  let ne = [...enemyBoard.filter(Boolean),  ...Array(7).fill(null)].slice(0, 7);
+  let np = [...playerBoard.filter(Boolean), ...Array(BOARD_SIZE).fill(null)].slice(0, BOARD_SIZE);
+  let ne = [...enemyBoard.filter(Boolean),  ...Array(BOARD_SIZE).fill(null)].slice(0, BOARD_SIZE);
   if (playerBoard.some((c, i) => c !== np[i]) || enemyBoard.some((c, i) => c !== ne[i])) {
     playerBoard = np; enemyBoard = ne; addLog(`➡️ <span style="color:#aaa">กระดานเลื่อน...</span>`); markDirty(); flushBoard(); await sleep(250);
   }
@@ -261,14 +307,14 @@ async function executeAttack(attacker, defender, idx, isPlayer) {
           // Beam from caster to summoned slot
           const len = Math.hypot(dx - sx, dy - sy);
           const ang = Math.atan2(dy - sy, dx - sx) * 180 / Math.PI;
-          const beam = document.createElement('div'); beam.className = 'temporal-beam';
+          const beam = document.createElement('div'); beam.className = 'battle-vfx temporal-beam';
           beam.style.cssText = `left:${sx}px;top:${sy}px;height:${len}px;transform:rotate(${ang - 90}deg);--tb-dur:0.65s;`;
           document.body.appendChild(beam);
           setTimeout(() => beam.remove(), 750);
           // Gear particles near summoned slot
           const gears = ['⚙️','⏳','🔵'];
           for (let g = 0; g < 4; g++) {
-            const p = document.createElement('div'); p.className = 'temporal-gear';
+            const p = document.createElement('div'); p.className = 'battle-vfx temporal-gear';
             p.textContent = gears[g % gears.length];
             const ox = (Math.random() - 0.5) * 70;
             const oy = -(30 + Math.random() * 40);
@@ -279,7 +325,7 @@ async function executeAttack(attacker, defender, idx, isPlayer) {
           // Shield burst on summoned card
           const dstSlot = ts[em];
           dstSlot.style.position = 'relative';
-          const shield = document.createElement('div'); shield.className = 'shield-burst';
+          const shield = document.createElement('div'); shield.className = 'battle-vfx shield-burst';
           dstSlot.appendChild(shield);
           setTimeout(() => shield.remove(), 1300);
         })();
@@ -437,7 +483,7 @@ async function executeAttack(attacker, defender, idx, isPlayer) {
         const dy = dstRect.top  + dstRect.height / 2;
         // Pulse rings from caster
         [0, 0.15, 0.30].forEach((delay) => {
-          const ring = document.createElement('div'); ring.className = 'restore-ring';
+          const ring = document.createElement('div'); ring.className = 'battle-vfx restore-ring';
           ring.style.cssText = `left:${sx}px;top:${sy}px;--rr-delay:${delay}s;--rr-dur:0.9s;`;
           document.body.appendChild(ring);
           setTimeout(() => ring.remove(), 1100);
@@ -446,14 +492,14 @@ async function executeAttack(attacker, defender, idx, isPlayer) {
         if (minIdx !== idx) {
           const len = Math.hypot(dx - sx, dy - sy);
           const ang = Math.atan2(dy - sy, dx - sx) * 180 / Math.PI;
-          const beam = document.createElement('div'); beam.className = 'restore-beam';
+          const beam = document.createElement('div'); beam.className = 'battle-vfx restore-beam';
           beam.style.cssText = `left:${sx}px;top:${sy}px;width:${len}px;transform:rotate(${ang}deg);--rb-dur:0.55s;`;
           document.body.appendChild(beam);
           setTimeout(() => beam.remove(), 700);
         }
         // Heart particles on healed card
         for (let h = 0; h < 5; h++) {
-          const p = document.createElement('div'); p.className = 'heart-particle';
+          const p = document.createElement('div'); p.className = 'battle-vfx heart-particle';
           p.textContent = h % 2 === 0 ? '💖' : '✨';
           const ox = (Math.random() - 0.5) * 60;
           const oy = -(55 + Math.random() * 50);
