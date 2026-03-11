@@ -95,7 +95,7 @@ function realRenderBoard() {
 function updateDeckCount() { let p = $('player-deck-count'), e = $('enemy-deck-count'); if(p) p.innerText = `🎴 กองการ์ดเรา: ${playerDeck.length}`; if(e) e.innerText = `🎴 กองการ์ดศัตรู: ${enemyDeck.length}`; }
 // ── Animated HP Counter ────────────────────────────────────
 // track ค่าที่กำลังแสดงอยู่ (อาจต่างจาก playerHP จริงระหว่าง animate)
-let _pHPDisplay = 25000, _eHPDisplay = 25000;
+let _pHPDisplay = -1, _eHPDisplay = -1;
 const _hpTimers = new WeakMap(); // cancel timer เก่าถ้าถูกเรียกซ้ำก่อน animate จบ
 
 function animateHP(el, fromVal, toVal, prefix = 'HP: ') {

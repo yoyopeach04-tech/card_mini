@@ -162,18 +162,15 @@ function updateFloats(now) {
 
   let qIdx = 0;
   while (qIdx < floatQueue.length && budget > 0) {
-    const data = floatQueue[floatQueue.length - 1 - qIdx];
+    const itemIdx = floatQueue.length - 1 - qIdx;
+    const data = floatQueue[itemIdx];
     const card = data.cardEl;
     const last = lastFloatTime.get(card) || 0;
 
     if (now - last > staggerTime) {
       lastFloatTime.set(card, now);
       spawnFloat(data);
-
-      const lastItem = floatQueue.pop();
-      if (qIdx > 0 && floatQueue.length > 0) {
-        floatQueue[floatQueue.length - qIdx] = lastItem;
-      }
+      floatQueue.splice(itemIdx, 1);
       budget--;
     } else {
       qIdx++;
@@ -258,7 +255,7 @@ async function processTurnPhase(isPlayer) {
     if ((pCard.burnTurns || 0) > 0) {
       let bd = Math.floor((pCard.maxHP || pCard.hp) * 0.05);
       pCard.hp -= bd; pCard.burnTurns--;
-      if (combatStats[pCard.uid]) combatStats[pCard.uid].taken += bd;
+      if (combatStats[pCard?.uid]) combatStats[pCard?.uid].taken += bd;
       showFloat(`🔥 -${bd}`, slots[i], "dmg"); addLog(`🔥 ${pN} ไฟไหม้! -${bd} (${pCard.burnTurns} เทิร์นที่เหลือ)`);
       if (pCard.hp <= 0) { checkDeaths(); myBoard = getMyBoard(isPlayer); pCard = myBoard[i]; if (!pCard) continue; }
     }
@@ -373,7 +370,7 @@ async function processTurnPhase(isPlayer) {
         ally.maxHP += hb; ally.hp += hb; ally.atk = Number(ally.atk) + ab; // ❌ ไม่แตะ baseATK — ไว้เป็น reference สีเปรียบเทียบ
         if (ally.isSummoned || ally.isClone) ally.critChance = (ally.critChance || 0) + 35;
         showFloat(`ATK+${ab}/HP+${hb}`, slots[ai], "skill"); markDirty(); 
-        if (has6) { let h = Math.floor(ally.maxHP * 0.1); ally.hp += h; if (combatStats[pCard.uid]) combatStats[pCard.uid].heal += h; showFloat(`+${h}HP`, slots[ai], "heal"); markDirty(); } // ❌ ไม่แตะ _displayHP อีก
+        if (has6) { let h = Math.floor(ally.maxHP * 0.1); ally.hp += h; if (combatStats[pCard?.uid]) combatStats[pCard?.uid].heal += h; showFloat(`+${h}HP`, slots[ai], "heal"); markDirty(); } // ❌ ไม่แตะ _displayHP อีก
         await sleep(200); 
         sd(() => au.remove(), 300);
       }
@@ -382,13 +379,13 @@ async function processTurnPhase(isPlayer) {
       usedSkill = true;
     }
 
-    if (hasSkill(pCard, "ฟื้นฟู")) { pCard.hp += 100;
-      if (isPlayer) playerHP += 100; else enemyHP += 100; if (combatStats[pCard.uid]) combatStats[pCard.uid].heal += 100; showFloat("+100", slots[i], "heal"); showFloat("+100", heroEl, "heal");
+    if (hasSkill(pCard, "ฟื้นฟู")) { pCard.hp = Math.min(pCard.maxHP, pCard.hp + 100);
+      if (combatStats[pCard?.uid]) combatStats[pCard?.uid].heal += 100; showFloat("+100", slots[i], "heal");
       usedSkill = true; }
 
     if (hasSkill(pCard, "Grave Domain")) {
-      if ((pCard.domainTurns || 0) <= 0) { pCard.domainTurns = 3; showFloat("GRAVE DOMAIN", slots[i], "skill"); usedSkill = true; }
-      else { pCard.domainTurns--; myBoard.forEach((a, ai) => { if (a) { let h = Math.floor(a.maxHP * 0.08); a.hp += h; if (combatStats[pCard.uid]) combatStats[pCard.uid].heal += h; showFloat(`+${h}`, slots[ai], "heal"); } }); usedSkill = true; }
+      if ((pCard.domainTurns || 0) <= 0 && !pCard.domainUsed) { pCard.domainTurns = 3; pCard.domainUsed = true; showFloat("GRAVE DOMAIN", slots[i], "skill"); usedSkill = true; }
+      else if ((pCard.domainTurns || 0) > 0) { pCard.domainTurns--; myBoard.forEach((a, ai) => { if (a) { let h = Math.floor(a.maxHP * 0.08); a.hp += h; if (combatStats[pCard?.uid]) combatStats[pCard?.uid].heal += h; showFloat(`+${h}`, slots[ai], "heal"); } }); usedSkill = true; }
     }
 
     if (hasSkill(pCard, "Soul Rip")) {

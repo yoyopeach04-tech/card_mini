@@ -3,14 +3,15 @@ function initCard(c) {
   if (!c || typeof c.maxHP !== 'undefined') { if (c && !combatStats[c.uid]) combatStats[c.uid] = { name: c.name, owner: c.owner, isClone: c.isClone, dmg: 0, taken: 0, heal: 0 }; return; }
   Object.assign(c, {
     baseHP: c.hp, maxHP: c.hp, baseATK: c.atk, bloodStacks: 0,
-    hasRevived: false, reviveBuffTurns: 0, domainTurns: 0, fragments: 0,
+    hasRevived: false, reviveBuffTurns: 0, domainTurns: 0, domainUsed: false, fragments: 0,
     hpLostAccum: 0, immortalTurns: 0, baseWait: c.waitTime, critChance: 0,
-    isSummoned: c.isSummoned || false, echoesUsed: false, burnTurns: c.burnTurns || 0,
+    isSummoned: !!c.isSummoned, echoesUsed: false, burnTurns: c.burnTurns ?? 0,
     shadowTurns: hasSkill(c, "Shadow Protocol") ? 2 : 0, shadowReady: false,
     airstrikeCharge: 0, sentinelStacks: 0,
     physShield: false, unrevivable: false,
     corruptTurns: 0, devourStacks: 0,
     tyrantEntryDone: false, hunterAuraActive: false, hunterAuraBonus: 0,
+    _displayHP: c.hp, _displayATK: c.atk,
   });
   if (!c.uid) { c.uid = ++cardUidCounter; c.owner = "Unknown"; }
   combatStats[c.uid] = { name: c.name, owner: c.owner, isClone: c.isClone, dmg: 0, taken: 0, heal: 0 };

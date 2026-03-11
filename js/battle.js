@@ -78,8 +78,8 @@ function applyDamage(target, dmg, targetEl, isTargetPlayer, sourceType = "normal
 
   let effective = Math.min(dmg, target.hp);
   target.hp -= dmg;
-  if (attackerCard && combatStats[attackerCard.uid]) combatStats[attackerCard.uid].dmg += dmg;
-  if (combatStats[target.uid]) combatStats[target.uid].taken += dmg;
+  if (attackerCard && combatStats[attackerCard?.uid]) combatStats[attackerCard?.uid].dmg += dmg;
+  if (combatStats[target?.uid]) combatStats[target?.uid].taken += dmg;
   if (dmg > 0 && !["tyrant", "blood_nova"].includes(sourceType)) showFloat(`-${dmg}`, targetEl, "dmg");
 
   const skipSources = ["tyrant", "blood_nova", "reflect", "echoes", "soul_nova", "counterstrike"];
@@ -92,7 +92,7 @@ function applyDamage(target, dmg, targetEl, isTargetPlayer, sourceType = "normal
       if (target.fragments >= 4) {
         target.fragments = 0; target.hpLostAccum = 0;
         let heal = Math.floor(target.maxHP * 0.5); target._displayHP = target.hp; target.hp += heal; target.immortalTurns = (target.immortalTurns || 0) + 1;
-        if (combatStats[target.uid]) combatStats[target.uid].heal += heal;
+        if (combatStats[target?.uid]) combatStats[target?.uid].heal += heal;
         showFloat("TYRANT AWOKEN!", targetEl, "skill"); showFloat(`+${heal}`, targetEl, "heal");
         let eb = isTargetPlayer ? enemyBoard : playerBoard, es = isTargetPlayer ? enemyBoardSlots : playerBoardSlots;
         let cs = isTargetPlayer ? playerBoardSlots[playerBoard.indexOf(target)] : enemyBoardSlots[enemyBoard.indexOf(target)];
@@ -158,7 +158,7 @@ function checkDeaths() {
             // FIX: set baseATK ก่อน แล้วค่อย buff atk
             ally.baseATK = ally.baseATK || ally.atk;
             ally.atk = Number(ally.atk) + 40;
-            if (combatStats[ally.uid]) combatStats[ally.uid].heal += healAmt;
+            if (combatStats[ally?.uid]) combatStats[ally?.uid].heal += healAmt;
             // visual: soul orb เคลื่อนจาก slot ที่ตาย → Void Dragon
             const dRect = getEffectRect(devourSlots[ai]);
             if (deadSRect) {
@@ -182,7 +182,7 @@ function checkDeaths() {
             const healAmt  = Math.floor(killer.maxHP * 0.15);
             killer.atk = Number(killer.atk) + atkBonus;
             killer.hp  = Math.min(killer.maxHP, killer.hp + healAmt);
-            if (combatStats[killer.uid]) combatStats[killer.uid].heal += healAmt;
+            if (combatStats[killer?.uid]) combatStats[killer?.uid].heal += healAmt;
             showFloat(`⚡ ATK+${atkBonus}/+${healAmt}HP`, oSlots[ki], "skill");
             addLog(`⚡ ${killer.name} <span class="log-skill">Power from the Fallen</span>: ATK→${killer.atk}`);
           });
@@ -299,7 +299,7 @@ async function executeAttack(attacker, defender, idx, isPlayer) {
   if (hasSkill(attacker, "พ่นไฟ")) {
     let fb = document.createElement('div'); fb.className = `fireball anim-fireball-${isPlayer ? 'up' : 'down'}`; aSlots[idx].appendChild(fb); await sleep(400);
     if (defender && defender.hp > 0 && !(defender.shadowTurns || 0)) { applyDamage(defender, 100, tSlots[idx], !isPlayer, "skill", attacker); }
-    else { if (isPlayer) enemyHP -= 100; else playerHP -= 100; showFloat("-100 🔥", tHero, "dmg"); if (combatStats[attacker.uid]) combatStats[attacker.uid].dmg += 100; }
+    else { if (isPlayer) enemyHP -= 100; else playerHP -= 100; showFloat("-100 🔥", tHero, "dmg"); if (combatStats[attacker?.uid]) combatStats[attacker?.uid].dmg += 100; }
     updateHeroHP(); fb.remove(); await sleep(400); if (defender?.hp <= 0) defender = null;
   }
 
@@ -333,7 +333,7 @@ async function executeAttack(attacker, defender, idx, isPlayer) {
       addLog(`👻 ${defender.name} ซ่อนตัว — ดาเมจทะลุฮีโร่`);
       spawnImpactClaw(tHero); // 💥 The Impact — กระแทกหน้าฮีโร่
       let pd = attacker.atk; if (isPlayer) enemyHP -= pd; else playerHP -= pd;
-      showFloat(`-${pd}`, tHero, "dmg"); if (combatStats[attacker.uid]) combatStats[attacker.uid].dmg += pd;
+      showFloat(`-${pd}`, tHero, "dmg"); if (combatStats[attacker?.uid]) combatStats[attacker?.uid].dmg += pd;
       updateHeroHP();
       // ⏳ The Recoil — รอดีดกลับที่เดิม
       await sleep(LOA_RECOIL_MS); cardEl?.classList.remove(anim); await sleep(100); continue;
@@ -354,7 +354,6 @@ async function executeAttack(attacker, defender, idx, isPlayer) {
       if (isCrit && shadowMult <= 1) { dmg = Math.floor(dmg * 2); showFloat("CRITICAL!", aSlots[idx], "skill"); }
 
       let tEl = tSlots[idx];
-      if (hasSkill(defender, "เกราะหิน")) dmg = Math.max(0, dmg - 100);
       if (hasSkill(defender, "หลบหลีก") && Math.random() > 0.5) { showFloat("Miss!", tEl, "skill"); addLog(`💨 ${aName} ตีวืด!`); }
       else {
         spawnImpactClaw(tEl); // 💥 The Impact — รอยกรงเล็บบน target
@@ -368,7 +367,7 @@ async function executeAttack(attacker, defender, idx, isPlayer) {
           if (dh > 0) { attacker._displayHP = attacker.hp; attacker.hp = Math.max(0, attacker.hp - dh); }
           defender._displayATK = defender.atk; defender._displayHP = defender.hp;
           defender.atk = Number(defender.atk) + da; defender.hp += dh; 
-          if (combatStats[defender.uid]) combatStats[defender.uid].heal += dh;
+          if (combatStats[defender?.uid]) combatStats[defender?.uid].heal += dh;
           showFloat(`🩸-${da}A/-${dh}H`, aSlots[idx], "drain"); 
           showFloat(`+${da}A/+${dh}H`, tEl, "drain");
           defender.bloodStacks = Math.min(3, (defender.bloodStacks || 0) + 1);
@@ -390,7 +389,7 @@ async function executeAttack(attacker, defender, idx, isPlayer) {
       if (hasSkill(attacker, "เจาะเกราะ") && dmg > 0) {
         spawnImpactClaw(tHero); // 💥 ทะลุไปโดนฮีโร่ด้วย
         let p = Math.floor(attacker.atk / 2); if (isPlayer) enemyHP -= p; else playerHP -= p;
-        showFloat(`-${p} (เจาะ)`, tHero, "dmg"); if (combatStats[attacker.uid]) combatStats[attacker.uid].dmg += p;
+        showFloat(`-${p} (เจาะ)`, tHero, "dmg"); if (combatStats[attacker?.uid]) combatStats[attacker?.uid].dmg += p;
       }
       if (hasSkill(attacker, "สตัน") && dmg > 0) { defender.atk = Math.max(0, Number(defender.atk) - 50); showFloat("ATK -50", tSlots[idx], "skill"); }
 
@@ -404,7 +403,7 @@ async function executeAttack(attacker, defender, idx, isPlayer) {
       if (isCrit) { dmg = Math.floor(dmg * 2); showFloat("CRITICAL!", aSlots[idx], "skill"); }
       if (isPlayer) enemyHP -= dmg; else playerHP -= dmg; showFloat(`-${dmg}`, tHero, "dmg");
       addLog(`⚔️ ${aName} → ฮีโร่ ${isCrit ? '💥 คริ! ' : ''}(<span class="log-dmg">${dmg}</span>)`);
-      if (combatStats[attacker.uid]) combatStats[attacker.uid].dmg += dmg;
+      if (combatStats[attacker?.uid]) combatStats[attacker?.uid].dmg += dmg;
     }
     
     updateHeroHP();
@@ -425,8 +424,8 @@ async function executeAttack(attacker, defender, idx, isPlayer) {
     if (minIdx !== -1) {
       let heal = Math.floor(attacker.atk * 1.5);
       tb[minIdx]._displayHP = tb[minIdx].hp; // snapshot
-      tb[minIdx].hp += heal;
-      if (combatStats[attacker.uid]) combatStats[attacker.uid].heal += heal;
+      tb[minIdx].hp = Math.min(tb[minIdx].maxHP, tb[minIdx].hp + heal);
+      if (combatStats[attacker?.uid]) combatStats[attacker?.uid].heal += heal;
 
       // ── ✨ RESTORATION PULSE visual ──
       (() => {
@@ -472,246 +471,3 @@ async function executeAttack(attacker, defender, idx, isPlayer) {
   }
   } // end for (attacks)
 } // end executeAttack
-
-// ── 13. TURN PHASE ─────────────────────────────────────────
-async function processTurnPhase(isPlayer) {
-  getMyBoard(isPlayer).forEach(initCard);
-  const slots  = isPlayer ? playerBoardSlots : enemyBoardSlots;
-  const heroEl = isPlayer ? playerHeroEl : enemyHeroEl;
-  
-  for (let i = 0; i < 7; i++) {
-    if (isGameOver) return;
-    let myBoard = getMyBoard(isPlayer), pCard = myBoard[i];
-    if (!pCard || pCard.hp <= 0) continue;
-    const pN = `<span class="${isPlayer ? 'log-player' : 'log-enemy'}">${pCard.name}</span>`;
-
-    if (pCard.immortalTurns  > 0) pCard.immortalTurns--;
-    if (pCard.reviveBuffTurns > 0) { pCard.reviveBuffTurns--; if (!pCard.reviveBuffTurns) pCard.atk -= Math.floor(pCard.baseATK * 0.2); }
-
-    // 🌌 Corrupt tick-down
-    if ((pCard.corruptTurns || 0) > 0) { pCard.corruptTurns--; markDirty(); }
-
-    if ((pCard.burnTurns || 0) > 0) {
-      let bd = Math.floor((pCard.maxHP || pCard.hp) * 0.05);
-      pCard.hp -= bd; pCard.burnTurns--;
-      if (combatStats[pCard.uid]) combatStats[pCard.uid].taken += bd;
-      showFloat(`🔥 -${bd}`, slots[i], "dmg"); addLog(`🔥 ${pN} ไฟไหม้! -${bd} (${pCard.burnTurns} เทิร์นที่เหลือ)`);
-      if (pCard.hp <= 0) { checkDeaths(); myBoard = getMyBoard(isPlayer); pCard = myBoard[i]; if (!pCard) continue; }
-    }
-
-    let isInStealth = false;
-    if (hasSkill(pCard, "Shadow Protocol") && (pCard.shadowTurns || 0) > 0) {
-      pCard.shadowTurns--;
-      if (pCard.shadowTurns > 0) { showFloat(`👻 STEALTH(${pCard.shadowTurns})`, slots[i], "skill"); addLog(`👻 ${pN} ซ่อนตัว (${pCard.shadowTurns} เทิร์น)`); isInStealth = true; }
-      else { pCard.shadowReady = true; showFloat("💥 SHADOW BREAK!", slots[i], "skill"); addLog(`💥 ${pN} ออกซ่อน! โจมตีถัดไป ×2.5`); }
-      markDirty(); flushBoard();
-    }
-
-    // 🦁 Hunter's Aura — toggle ATK+30% เมื่อมีศัตรู baseWait < 3 บนสนาม
-    if (hasSkill(pCard, "Hunter's Aura")) {
-      const oBoard2 = getMyBoard(!isPlayer);
-      const hasWeak = oBoard2.some(c => c && c.hp > 0 && (c.baseWait || 0) < 3);
-      if (hasWeak && !pCard.hunterAuraActive) {
-        pCard.hunterAuraActive = true;
-        const bonus = Math.floor(pCard.baseATK * 0.3);
-        pCard._displayATK = pCard.atk; pCard.hunterAuraBonus = bonus;
-        pCard.atk = Number(pCard.atk) + bonus;
-        showFloat("🦁 HUNTER +30%", slots[i], "skill"); markDirty();
-      } else if (!hasWeak && pCard.hunterAuraActive) {
-        pCard.hunterAuraActive = false;
-        pCard._displayATK = pCard.atk;
-        pCard.atk = Math.max(pCard.baseATK, Number(pCard.atk) - (pCard.hunterAuraBonus || 0));
-        pCard.hunterAuraBonus = 0; markDirty();
-      }
-    }
-
-    // 💀 Devour the Weak — entry skill: ยิงครั้งเดียวตอนเพิ่งลงสนาม
-    if (hasSkill(pCard, "Devour the Weak") && !pCard.tyrantEntryDone) {
-      pCard.tyrantEntryDone = true;
-      const oBoard2 = getMyBoard(!isPlayer);
-      const oSlots2 = isPlayer ? enemyBoardSlots : playerBoardSlots;
-      let minAtk = Infinity, minIdx = -1;
-      oBoard2.forEach((c, idx) => { if (c && c.hp > 0 && c.atk < minAtk) { minAtk = c.atk; minIdx = idx; } });
-      if (minIdx !== -1) {
-        const victim = oBoard2[minIdx];
-        const atkGain = Math.floor(victim.atk * 2.0);
-        const hpGain  = Math.floor(victim.maxHP * 2.0);
-        addLog(`💀 ${pN} <span class="log-skill">Devour the Weak</span> → ${victim.name} (ATK ${victim.atk})`);
-        // visual: reuse tyrant-overlay + devour-title
-        battlefieldEl?.classList.add('anim-tyrant-shake');
-        sd(() => battlefieldEl?.classList.remove('anim-tyrant-shake'), 900);
-        const ov2 = document.createElement('div'); ov2.className = 'tyrant-overlay'; document.body.appendChild(ov2);
-        const dt  = document.createElement('div'); dt.className  = 'devour-title'; document.body.appendChild(dt);
-        dt.innerHTML = `<span class="title-main">💀 DEVOURED</span><span class="title-sub">${victim.name} — Consumed</span><div class="title-skulls">💀⚔️💀</div>`;
-        sd(() => ov2.remove(), 2100); sd(() => dt.remove(), 2300);
-        await sleep(500);
-        // kill victim
-        victim.hp = 0;
-        checkDeaths(); markDirty(); flushBoard(); await sleep(300);
-        // buff Tyrant
-        pCard._displayATK = pCard.atk; pCard._displayHP = pCard.hp;
-        pCard.atk = Number(pCard.atk) + atkGain;
-        pCard.maxHP += hpGain; pCard.hp = Math.min(pCard.maxHP, pCard.hp + hpGain);
-        // buff aura visual
-        const au = document.createElement('div'); au.className = 'buff-aura'; slots[i].appendChild(au);
-        sd(() => au.remove(), 700);
-        showFloat(`💀 ATK+${atkGain}/HP+${hpGain}`, slots[i], "skill");
-        addLog(`💀 ${pN} กลืนพลัง: ATK+${atkGain} HP+${hpGain}`);
-        markDirty(); flushBoard(); await sleep(600);
-        // สกิล 4: โจมตีทันที 1 ครั้ง
-        myBoard = getMyBoard(isPlayer); pCard = myBoard[i];
-        if (pCard && pCard.hp > 0) {
-          showFloat("⚡ INSTANT ATTACK!", slots[i], "skill");
-          await executeAttack(pCard, getMyBoard(!isPlayer)[i], i, isPlayer);
-          checkDeaths(); markDirty(); flushBoard(); await sleep(300);
-        }
-        myBoard = getMyBoard(isPlayer); pCard = myBoard[i];
-        if (!pCard || pCard.hp <= 0) continue;
-      }
-    }
-
-    let usedSkill = false;
-
-    if (hasSkill(pCard, "Temporal Acceleration")) {
-      addLog(`⏳ ${pN} <span class="log-skill">Temporal Acceleration</span>`);
-      showFloat("⏳ TIME ACCEL!", slots[i], "skill"); await sleep(400);
-
-      // ── ✨ TIME ACCEL visual: gold sweep + clock particles ──
-      (() => {
-        const sweep = document.createElement('div'); sweep.className = 'time-accel-sweep'; document.body.appendChild(sweep);
-        sd(() => sweep.remove(), 950);
-        const clocks = ['⏳','⌛','🕐','⏱️'];
-        for (let ci = 0; ci < 6; ci++) {
-          const slotRect = getEffectRect(slots[i]);
-          const p = document.createElement('div'); p.className = 'time-clock-particle';
-          p.textContent = clocks[ci % clocks.length];
-          const ox = (Math.random() - 0.5) * 160;
-          const oy = -(60 + Math.random() * 80);
-          p.style.cssText = `left:${slotRect.left + slotRect.width/2 + (Math.random()-0.5)*60}px;top:${slotRect.top}px;--clk-x:${ox}px;--clk-y:${oy}px;--clk-dur:${1.1 + Math.random()*0.4}s;--clk-delay:${ci * 0.08}s;`;
-          document.body.appendChild(p);
-          setTimeout(() => p.remove(), 1800);
-        }
-      })();
-      // ──────────────────────────────────────────────────────
-
-      let th = isPlayer ? hand : enemyHand, tz = isPlayer ? handZone : enemyHandZone;
-      th.forEach(c => c.waitTime = Math.max(0, c.waitTime - 1));
-      if (tz) { tz.classList.add('anim-hand-twinkle'); showFloat("CD -1", slots[i], "heal");
-      if (isPlayer) renderHand(); else renderEnemyHand(); await sleep(800); tz.classList.remove('anim-hand-twinkle'); }
-      
-      let has6 = myBoard.some(c => c && c.baseWait >= 6);
-      for (let ai = 0; ai < myBoard.length; ai++) {
-        let ally = myBoard[ai];
-        if (!ally) continue;
-        let au = document.createElement('div'); au.className = 'buff-aura'; slots[ai].appendChild(au);
-        let hb = Math.floor(ally.maxHP * 0.3), ab = Math.floor(ally.baseATK * 0.3);
-        ally._displayHP = ally.hp; ally._displayATK = ally.atk; // snapshot ครั้งเดียวก่อน mutate ทั้งหมด
-        ally.maxHP += hb; ally.hp += hb; ally.atk = Number(ally.atk) + ab; // ❌ ไม่แตะ baseATK — ไว้เป็น reference สีเปรียบเทียบ
-        if (ally.isSummoned || ally.isClone) ally.critChance = (ally.critChance || 0) + 35;
-        showFloat(`ATK+${ab}/HP+${hb}`, slots[ai], "skill"); markDirty(); 
-        if (has6) { let h = Math.floor(ally.maxHP * 0.1); ally.hp += h; if (combatStats[pCard.uid]) combatStats[pCard.uid].heal += h; showFloat(`+${h}HP`, slots[ai], "heal"); markDirty(); } // ❌ ไม่แตะ _displayHP อีก
-        await sleep(200); 
-        sd(() => au.remove(), 300);
-      }
-      // ❌ ลบ flushBoard() ออกจากตรงนี้ — ให้ if(usedSkill) ข้างล่าง flush แทน
-      // เพราะถ้า flush ตรงนี้ก่อน _displayHP จะถูก reset → outer flush ไม่มีอะไรเปลี่ยน → เลขไม่ไหล
-      usedSkill = true;
-    }
-
-    if (hasSkill(pCard, "ฟื้นฟู")) { pCard.hp += 100;
-      if (isPlayer) playerHP += 100; else enemyHP += 100; if (combatStats[pCard.uid]) combatStats[pCard.uid].heal += 100; showFloat("+100", slots[i], "heal"); showFloat("+100", heroEl, "heal");
-      usedSkill = true; }
-
-    if (hasSkill(pCard, "Grave Domain")) {
-      if ((pCard.domainTurns || 0) <= 0) { pCard.domainTurns = 3; showFloat("GRAVE DOMAIN", slots[i], "skill"); usedSkill = true; }
-      else { pCard.domainTurns--; myBoard.forEach((a, ai) => { if (a) { let h = Math.floor(a.maxHP * 0.08); a.hp += h; if (combatStats[pCard.uid]) combatStats[pCard.uid].heal += h; showFloat(`+${h}`, slots[ai], "heal"); } }); usedSkill = true; }
-    }
-
-    if (hasSkill(pCard, "Soul Rip")) {
-      let ve = getMyBoard(!isPlayer).filter(Boolean), es = myBoard.reduce((a, c, ii) => !c ? [...a, ii] : a, []);
-      if (ve.length && es.length) {
-        let tgt = ve[Math.floor(Math.random() * ve.length)];
-        let cln = { uid: ++cardUidCounter, owner: isPlayer ? 'พีช' : 'บอส', name: "Shadow of " + tgt.name.replace(/Shadow of /g, ""),
-          hp: Math.floor((tgt.maxHP || tgt.hp) * 0.5), maxHP: Math.floor((tgt.maxHP || tgt.hp) * 0.5), baseHP: Math.floor((tgt.maxHP || tgt.hp) * 0.5),
-          atk: Math.floor((tgt.baseATK || tgt.atk) * 1.5), baseATK: Math.floor((tgt.baseATK || tgt.atk) * 1.5),
-          stars: 0, image: tgt.image, skills: [{ name: "💥 Soul Nova", desc: "โคลนระเบิดเป้าเดี่ยว" }],
-          parentATK: pCard.atk, isClone: true, waitTime: 0, isSummoned: true, bloodStacks: 0, hasRevived: false, reviveBuffTurns: 0, domainTurns: 0, fragments: 0, hpLostAccum: 0, immortalTurns: 0, baseWait: 0, critChance: 0, echoesUsed: false, shadowTurns: 0, shadowReady: false, airstrikeCharge: 0, sentinelStacks: 0, burnTurns: 0 };
-        myBoard[es[0]] = cln; initCard(cln); showFloat("Summon!", slots[es[0]], "skill"); addLog(`💀 ${pN} Soul Rip → ${cln.name}`); usedSkill = true;
-      }
-    }
-
-    if (hasSkill(pCard, "Void Breath") && pCard.hp > 0) {
-      const vbDmg = Math.floor(pCard.atk * 1.4);
-      const oppBoard = getMyBoard(!isPlayer);
-      const oppSlots = isPlayer ? enemyBoardSlots : playerBoardSlots;
-      const hasTargets = oppBoard.some(Boolean);
-      if (hasTargets) {
-        addLog(`🌌 ${pN} <span class="log-skill">Void Breath!</span> <span class="log-dmg">AOE ${vbDmg} + Corrupt</span>`);
-
-        // ── ✨ VOID BREATH visual ──
-        (() => {
-          battlefieldEl?.classList.add('anim-screen-shake'); sd(() => battlefieldEl?.classList.remove('anim-screen-shake'), 700);
-          const ov = document.createElement('div'); ov.className = 'void-overlay'; document.body.appendChild(ov);
-          sd(() => ov.remove(), 2100);
-          const ttl = document.createElement('div'); ttl.className = 'void-breath-title';
-          ttl.innerHTML = `<span class="vt-main">🌌 VOID BREATH</span><span class="vt-sub">— Corrupt —</span>`;
-          document.body.appendChild(ttl); sd(() => ttl.remove(), 2300);
-          const sRect = getEffectRect(slots[i]);
-          const cx = sRect.left + sRect.width / 2, cy = sRect.top + sRect.height / 2;
-          [0, 0.18, 0.36].forEach((d, idx) => {
-            const sw = document.createElement('div'); sw.className = 'void-shockwave';
-            sw.style.cssText = `left:${cx}px;top:${cy}px;--vs-delay:${d}s;--vs-dur:${1.1 + idx*0.1}s;`;
-            document.body.appendChild(sw); setTimeout(() => sw.remove(), (1.6 + d) * 1000);
-          });
-        })();
-        // ──────────────────────────
-
-        await sleep(400);
-        for (let ai = 0; ai < oppBoard.length; ai++) {
-          if (!oppBoard[ai]) continue;
-          const fl = document.createElement('div'); fl.className = 'void-hit-flash';
-          oppSlots[ai].style.position = 'relative'; oppSlots[ai].appendChild(fl);
-          const st = document.createElement('div'); st.className = 'corrupt-stain';
-          oppSlots[ai].appendChild(st);
-          applyDamage(oppBoard[ai], vbDmg, oppSlots[ai], !isPlayer, "void_breath", pCard);
-          oppBoard[ai].corruptTurns = (oppBoard[ai].corruptTurns || 0) + 2;
-          showFloat("🌌 CORRUPT", oppSlots[ai], "skill", ai * 80);
-          sd(() => fl?.remove(), 900); setTimeout(() => st?.remove(), 3000);
-          await sleep(80);
-        }
-        markDirty(); flushBoard(); updateHeroHP(); await sleep(500);
-        checkDeaths(); myBoard = getMyBoard(isPlayer); pCard = myBoard[i];
-        if (!pCard || pCard.hp <= 0) continue;
-        usedSkill = true;
-      }
-    }
-
-    if (hasSkill(pCard, "Airstrike Omega") && !isInStealth) {
-      pCard.airstrikeCharge = (pCard.airstrikeCharge || 0) + 1;
-      showFloat(`🚀 ${pCard.airstrikeCharge}/3`, slots[i], "skill"); markDirty(); flushBoard();
-      if (pCard.airstrikeCharge >= 3) {
-        pCard.airstrikeCharge = 0;
-        let aoeDmg = Math.floor(pCard.atk * 1.6);
-        let tb = getMyBoard(!isPlayer), ts2 = isPlayer ? enemyBoardSlots : playerBoardSlots;
-        let fl = document.createElement('div'); fl.className = 'airstrike-flash'; document.body.appendChild(fl); sd(() => fl.remove(), 1500);
-        battlefieldEl?.classList.add('anim-screen-shake'); sd(() => battlefieldEl?.classList.remove('anim-screen-shake'), 700);
-        let ttl = document.createElement('div'); ttl.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:99995;pointer-events:none;text-align:center;animation:bloodTitleAnim 2s ease-out forwards";
-        ttl.innerHTML = `<span style="display:block;font-size:3.5rem;font-weight:900;font-family:Georgia,serif;color:#fff;text-shadow:0 0 20px #ff6600,0 0 50px #ff3300,4px 4px 0 #661100;-webkit-text-stroke:2px #ff4400">🚀 AIRSTRIKE OMEGA</span>`;
-        document.body.appendChild(ttl); sd(() => ttl.remove(), 2000);
-        addLog(`🚀 ${pN} <span class="log-skill">Airstrike Omega!</span> <span class="log-dmg">${aoeDmg} AOE ทะลุเกราะ + Burn</span>`);
-        await sleep(400);
-        // ✅ FIX AOE Stagger: เรียกใช้ delay จาก index
-        for (let ai = 0; ai < tb.length; ai++) { if (!tb[ai]) continue; applyDamage(tb[ai], aoeDmg, ts2[ai], !isPlayer, "airstrike", pCard);
-          tb[ai].burnTurns = (tb[ai].burnTurns || 0) + 2; showFloat("🔥 BURN", ts2[ai], "skill", ai * 80); await sleep(100); }
-        markDirty(); flushBoard(); updateHeroHP(); await sleep(500);
-        checkDeaths(); myBoard = getMyBoard(isPlayer); pCard = myBoard[i];
-        if (!pCard || pCard.hp <= 0) continue;
-        usedSkill = true;
-      }
-    }
-
-    if (usedSkill) { markDirty(); flushBoard(); updateHeroHP(); await sleep(500); checkDeaths(); myBoard = getMyBoard(isPlayer); pCard = myBoard[i]; }
-    if (!isInStealth && pCard && pCard.hp > 0) { await executeAttack(pCard, getMyBoard(!isPlayer)[i], i, isPlayer); checkDeaths(); markDirty(); flushBoard(); await sleep(300); }
-  }
-  if (!isGameOver) await shiftBoards();
-}
